@@ -13,12 +13,9 @@ import logging
 import os
 import time
 
-import requests as requests
+import requests
 
 skyland_tokens = os.getenv('SKYLAND_TOKEN')
-
-
-file_save_token = f'{os.path.dirname(__file__)}/INPUT_HYPERGRYPH_TOKEN.txt'
 
 header = {
     'cred': 'cred',
