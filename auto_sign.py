@@ -14,8 +14,13 @@ import os
 import time
 
 import requests
+import notify
 
 skyland_tokens = os.getenv('SKYLAND_TOKEN')
+skyland_notify = os.getenv('SKYLAND_NOTIFY')
+
+# 消息内容
+run_message: str = ''
 
 header = {
     'cred': 'cred',
@@ -42,6 +47,47 @@ grant_code_url = "https://as.hypergryph.com/user/oauth2/v2/grant"
 
 app_code = '4ca99fa6b56cc2ba'
 
+def sendMessage(title:str,content: str,type:str):
+    """
+    整合消息
+    :param title: 标题
+    :param content: 内容
+    :param type: 类型
+    :return: none
+    """
+    if(skyland_notify):
+        type = type.strip()
+        match type:
+            case 'TG':
+                notify.telegram_bot(title,content)
+            case 'BARK':
+                notify.bark(title,content)
+            case 'DD':
+                notify.dingding_bot(title,content)
+            case 'FSKEY':
+                notify.feishu_bot(title,content)
+            case 'GOBOT':
+                notify.go_cqhttp(title,content)
+            case 'GOTIFY':
+                notify.gotify(title,content)
+            case 'IGOT':
+                notify.iGot(title,content)
+            case 'SERVERJ':
+                notify.serverJ(title,content)
+            case 'PUSHDEER':
+                notify.pushdeer(title,content)
+            case 'PUSHPLUS':
+                notify.pushplus_bot(title,content)
+            case 'QMSG':
+                notify.qmsg_bot(title,content)
+            case 'QYWXAPP':
+                notify.wecom_app(title,content)
+            case 'QYWXBOT':
+                notify.wecom_bot(title,content)
+            case _:
+                pass
+
+ 
 
 def copy_header(cred):
     """
@@ -106,12 +152,18 @@ def get_binding_list(cred):
     :param cred: cred
     :return: 返回绑定角色列表
     """
+    global run_message
+    message:str 
     v = []
     resp = requests.get(url=binding_url, headers=copy_header(cred)).json()
     if resp['code'] != 0:
-        logging.error(f"请求角色列表出现问题：{resp['message']}")
+        message = f"请求角色列表出现问题：{resp['message']}"
+        run_message += message + '\n'
+        logging.error(message)
         if resp.get('message') == '用户未登录':
-            logging.error(f'用户登录可能失效了，请重新登录！')
+            message = f'用户登录可能失效了，请重新登录！'
+            run_message += message + '\n'
+            logging.error(message)
             return v
     for i in resp['data']['list']:
         if i.get('appCode') != 'arknights':
@@ -126,7 +178,9 @@ def do_sign(cred):
     :param cred: cred
     :return: none
     """
+    global run_message
     characters = get_binding_list(cred)
+    account_num: int = 1
     for i in characters:
         body = {
             'uid': i.get('uid'),
@@ -134,14 +188,18 @@ def do_sign(cred):
         }
         resp = requests.post(sign_url, headers=copy_header(cred), json=body).json()
         if resp['code'] != 0:
-            logging.error(f'角色{i.get("nickName")}({i.get("channelName")})签到失败了！原因：{resp.get("message")}')
+            fail_message:str = f'角色{i.get("nickName")}({i.get("channelName")})签到失败了！原因：{resp.get("message")}'
+            run_message +=  f'[账号{account_num}] {fail_message}\n'
+            print(fail_message)
+            account_num+=1
             continue
         awards = resp['data']['awards']
         for j in awards:
             res = j['resource']
-            print(
-                f'角色{i.get("nickName")}({i.get("channelName")})签到成功，获得了{res["name"]}×{res.get("count") or 1}'
-            )
+            success_message: str = f'角色{i.get("nickName")}({i.get("channelName")})签到成功，获得了{res["name"]}x{res.get("count") or 1}\n'
+            run_message += f'[账号{account_num}] {success_message}\n'
+            account_num+=1
+            print(success_message)
 
 
 def start(token):
@@ -150,11 +208,13 @@ def start(token):
     :param token:
     :return: none
     """
+    global run_message
     try:
         cred = login_by_token(token)
         do_sign(cred)
     except Exception as ex:
-        logging.error('签到完全失败了！：', exc_info=ex)
+        run_message+= f'签到失败: {ex}'
+        logging.error('签到完全失败了！: ', exc_info=ex)
 
 
 def main():
@@ -165,9 +225,10 @@ def main():
                 start(token)
                 print('等待10s')
                 time.sleep(10)
-
     else:
         print('没有设置token')
+    # 发送消息
+    sendMessage('森空岛签到',run_message,skyland_notify.strip())
 
 
 if __name__ == "__main__":
