@@ -6,11 +6,11 @@
 
 ## 使用
 
-1. 添加依赖
+1. 添加环境变量
 
-   名称: SKYLAND_TOKEN
+   名称: `SKYLAND_TOKEN`
 
-   值: Token1;Token2;
+   值: `Token1;Token2;`
 
    记得添加`;`
 
@@ -20,7 +20,7 @@
 
    推荐定时: `0 0 23 1 * *`
 
-   分支：master
+   分支: `master`
 
 3. 运行订阅
 
@@ -46,4 +46,7 @@
 
    data.content即为token
 
+## 其他
+
+1. 需要requests包，若报错则在 `依赖管理-python3`，添加`requests`依赖
    
