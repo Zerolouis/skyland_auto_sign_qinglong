@@ -46,6 +46,34 @@
 
    data.content即为token
 
+## 通知(可选)
+
+1. 添加环境变量
+   
+   名称: `SKYLAND_NOTIFY`
+
+   值如下表
+
+   | 值        | 说明       |
+   | -------- | -------- |
+   | TG       | Telegram |
+   | BARK     | bark     |
+   | DD       | 钉钉机器人    |
+   | FSKEY    | 飞书机器人    |
+   | GOBOT    |  QQ机器人        |
+   | IGOT     |   iGot 聚合推送       |
+   | SERVERJ  |    server 酱      |
+   | PUSHDEER |    PushDeer      |
+   | PUSHPLUS |    push+ 微信推送      |
+   | QMSG     |   qmsg 酱       |
+   | QYWXAPP  |   企业微信应用       |
+   | QYWXBOT  |  企业微信机器人        |
+
+   仅测试了TG，其他推送方式若有问题请反馈
+
+2. 在青龙面板`脚本管理`中找到本项目的`notify.py`文件，并填入相对应的推送API
+
+
 ## 其他
 
 1. 需要requests包，若报错则在 `依赖管理-python3`，添加`requests`依赖
