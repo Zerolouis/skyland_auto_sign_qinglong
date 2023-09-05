@@ -161,13 +161,13 @@ def main():
     token_list = skyland_tokens.split(';')
     if len(token_list) != 0:
         for token in token_list:
-            start(token)
-            print('等待10s')
-            time.sleep(10)
+            if token:
+                start(token)
+                print('等待10s')
+                time.sleep(10)
 
     else:
         print('没有设置token')
-    print('运行结束!')
 
 
 if __name__ == "__main__":
