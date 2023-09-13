@@ -22,6 +22,8 @@ skyland_notify = os.getenv('SKYLAND_NOTIFY')
 # 消息内容
 run_message: str = ''
 
+account_num: int = 1
+
 header = {
     'cred': 'cred',
     'User-Agent': 'Skland/1.0.1 (com.hypergryph.skland; build:100001014; Android 31; ) Okhttp/4.11.0',
@@ -180,7 +182,7 @@ def do_sign(cred):
     """
     global run_message
     characters = get_binding_list(cred)
-    account_num: int = 1
+    global account_num
     for i in characters:
         body = {
             'uid': i.get('uid'),
