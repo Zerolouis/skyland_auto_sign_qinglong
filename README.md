@@ -2,7 +2,10 @@
 
 适用于青龙面板的森空岛签到脚本
 
-原项目: https://github.com/xxyz30/skyland-auto-sign
+原项目: ~~https://github.com/xxyz30/skyland-auto-sign~~
+
+https://gitee.com/FancyCabbage/skyland-auto-sign
+
 
 ## 使用
 
