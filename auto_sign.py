@@ -25,16 +25,26 @@ run_message: str = ''
 account_num: int = 1
 
 header = {
-    'cred': 'cred',
+    'cred': '',
     'User-Agent': 'Skland/1.0.1 (com.hypergryph.skland; build:100001014; Android 31; ) Okhttp/4.11.0',
     'Accept-Encoding': 'gzip',
-    'Connection': 'close'
+    'Connection': 'close',
+    # 老版本请求头，新版本要验参
+    "vName": "1.0.1",
+    "vCode": "100001014",
+    "dId": "de9759a5afaa634f",
+    "platform": "1"
 }
 
 header_login = {
     'User-Agent': 'Skland/1.0.1 (com.hypergryph.skland; build:100001014; Android 31; ) Okhttp/4.11.0',
     'Accept-Encoding': 'gzip',
-    'Connection': 'close'
+    'Connection': 'close',
+    # 老版本请求头，新版本要验参
+    "vName": "1.0.1",
+    "vCode": "100001014",
+    "dId": "de9759a5afaa634f",
+    "platform": "1"
 }
 
 # 签到url
