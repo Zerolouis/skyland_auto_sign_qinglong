@@ -8,16 +8,19 @@ cron: 0 30 8 * * *
 new Env('森空岛签到');
 Update: 2023/9/5
 """
+import hashlib
+import hmac
 import json
 import logging
 import os
 import time
+from urllib import parse
 
 import requests
 import notify
 
-skyland_tokens = os.getenv('SKYLAND_TOKEN')
-skyland_notify = os.getenv('SKYLAND_NOTIFY')
+skyland_tokens = os.getenv('SKYLAND_TOKEN') or ''
+skyland_notify = os.getenv('SKYLAND_NOTIFY') or ''
 
 # 消息内容
 run_message: str = ''
@@ -28,24 +31,26 @@ header = {
     'cred': '',
     'User-Agent': 'Skland/1.0.1 (com.hypergryph.skland; build:100001014; Android 31; ) Okhttp/4.11.0',
     'Accept-Encoding': 'gzip',
-    'Connection': 'close',
-    # 老版本请求头，新版本要验参
-    "vName": "1.0.1",
-    "vCode": "100001014",
-    "dId": "de9759a5afaa634f",
-    "platform": "1"
+    'Connection': 'close'
 }
 
 header_login = {
     'User-Agent': 'Skland/1.0.1 (com.hypergryph.skland; build:100001014; Android 31; ) Okhttp/4.11.0',
     'Accept-Encoding': 'gzip',
-    'Connection': 'close',
-    # 老版本请求头，新版本要验参
-    "vName": "1.0.1",
-    "vCode": "100001014",
-    "dId": "de9759a5afaa634f",
-    "platform": "1"
+    'Connection': 'close'
 }
+
+# 签名请求头一定要这个顺序，否则失败
+# timestamp是必填的,其它三个随便填,不要为none即可
+header_for_sign = {
+    'platform': '',
+    'timestamp': '',
+    'dId': '',
+    'vName': ''
+}
+
+# 参数验证的token
+sign_token = ''
 
 # 签到url
 sign_url = "https://zonai.skland.com/api/v1/game/attendance"
@@ -59,7 +64,8 @@ grant_code_url = "https://as.hypergryph.com/user/oauth2/v2/grant"
 
 app_code = '4ca99fa6b56cc2ba'
 
-def sendMessage(title:str,content: str,type:str):
+
+def sendMessage(title: str, content: str, type: str):
     """
     整合消息
     :param title: 标题
@@ -67,39 +73,74 @@ def sendMessage(title:str,content: str,type:str):
     :param type: 类型
     :return: none
     """
-    if(skyland_notify):
+    if (skyland_notify):
         type = type.strip()
         match type:
             case 'TG':
-                notify.telegram_bot(title,content)
+                notify.telegram_bot(title, content)
             case 'BARK':
-                notify.bark(title,content)
+                notify.bark(title, content)
             case 'DD':
-                notify.dingding_bot(title,content)
+                notify.dingding_bot(title, content)
             case 'FSKEY':
-                notify.feishu_bot(title,content)
+                notify.feishu_bot(title, content)
             case 'GOBOT':
-                notify.go_cqhttp(title,content)
+                notify.go_cqhttp(title, content)
             case 'GOTIFY':
-                notify.gotify(title,content)
+                notify.gotify(title, content)
             case 'IGOT':
-                notify.iGot(title,content)
+                notify.iGot(title, content)
             case 'SERVERJ':
-                notify.serverJ(title,content)
+                notify.serverJ(title, content)
             case 'PUSHDEER':
-                notify.pushdeer(title,content)
+                notify.pushdeer(title, content)
             case 'PUSHPLUS':
-                notify.pushplus_bot(title,content)
+                notify.pushplus_bot(title, content)
             case 'QMSG':
-                notify.qmsg_bot(title,content)
+                notify.qmsg_bot(title, content)
             case 'QYWXAPP':
-                notify.wecom_app(title,content)
+                notify.wecom_app(title, content)
             case 'QYWXBOT':
-                notify.wecom_bot(title,content)
+                notify.wecom_bot(title, content)
             case _:
                 pass
 
- 
+
+def generate_signature(token: str, path, body_or_query):
+    """
+    获得签名头
+    接口地址+方法为Get请求？用query否则用body+时间戳+ 请求头的四个重要参数（dId，platform，timestamp，vName）.toJSON()
+    将此字符串做HMAC加密，算法为SHA-256，密钥token为请求cred接口会返回的一个token值
+    再将加密后的字符串做MD5即得到sign
+    :param token: 拿cred时候的token
+    :param path: 请求路径（不包括网址）
+    :param body_or_query: 如果是GET，则是它的query。POST则为它的body
+    :return: 计算完毕的sign
+    """
+    # 总是说请勿修改设备时间，怕不是yj你的服务器有问题吧，所以这里特地-2
+    t = str(int(time.time()) - 2)
+    token = token.encode('utf-8')
+    header_ca = json.loads(json.dumps(header_for_sign))
+    header_ca['timestamp'] = t
+    header_ca_str = json.dumps(header_ca, separators=(',', ':'))
+    s = path + body_or_query + t + header_ca_str
+    hex_s = hmac.new(token, s.encode('utf-8'), hashlib.sha256).hexdigest()
+    md5 = hashlib.md5(hex_s.encode('utf-8')).hexdigest().encode('utf-8').decode('utf-8')
+    logging.info(f'算出签名: {md5}')
+    return md5, header_ca
+
+
+def get_sign_header(url: str, method, body, old_header):
+    h = json.loads(json.dumps(old_header))
+    p = parse.urlparse(url)
+    if method.lower() == 'get':
+        h['sign'], header_ca = generate_signature(sign_token, p.path, p.query)
+    else:
+        h['sign'], header_ca = generate_signature(sign_token, p.path, json.dumps(body))
+    for i in header_ca:
+        h[i] = header_ca[i]
+    return h
+
 
 def copy_header(cred):
     """
@@ -139,6 +180,8 @@ def get_cred(grant):
     }, headers=header_login).json()
     if resp['code'] != 0:
         raise Exception(f'获得cred失败：{resp["messgae"]}')
+    global sign_token
+    sign_token = resp['data']['token']
     return resp['data']['cred']
 
 
@@ -165,9 +208,9 @@ def get_binding_list(cred):
     :return: 返回绑定角色列表
     """
     global run_message
-    message:str 
+    message: str
     v = []
-    resp = requests.get(url=binding_url, headers=copy_header(cred)).json()
+    resp = requests.get(binding_url, headers=get_sign_header(binding_url, 'get', None, copy_header(cred))).json()
     if resp['code'] != 0:
         message = f"请求角色列表出现问题：{resp['message']}"
         run_message += message + '\n'
@@ -198,19 +241,20 @@ def do_sign(cred):
             'uid': i.get('uid'),
             'gameId': i.get("channelMasterId")
         }
-        resp = requests.post(sign_url, headers=copy_header(cred), json=body).json()
+        resp = requests.post(sign_url, headers=get_sign_header(sign_url, 'post', body, copy_header(cred)),
+                             json=body).json()
         if resp['code'] != 0:
-            fail_message:str = f'角色{i.get("nickName")}({i.get("channelName")})签到失败了！原因：{resp.get("message")}'
-            run_message +=  f'[账号{account_num}] {fail_message}\n'
+            fail_message: str = f'角色{i.get("nickName")}({i.get("channelName")})签到失败了！原因：{resp.get("message")}'
+            run_message += f'[账号{account_num}] {fail_message}\n'
             print(fail_message)
-            account_num+=1
+            account_num += 1
             continue
         awards = resp['data']['awards']
         for j in awards:
             res = j['resource']
             success_message: str = f'角色{i.get("nickName")}({i.get("channelName")})签到成功，获得了{res["name"]}x{res.get("count") or 1}\n'
             run_message += f'[账号{account_num}] {success_message}\n'
-            account_num+=1
+            account_num += 1
             print(success_message)
 
 
@@ -225,11 +269,12 @@ def start(token):
         cred = login_by_token(token)
         do_sign(cred)
     except Exception as ex:
-        run_message+= f'签到失败: {ex}'
+        run_message += f'签到失败: {ex}'
         logging.error('签到完全失败了！: ', exc_info=ex)
 
 
 def main():
+    global run_message
     token_list = skyland_tokens.split(';')
     if len(token_list) != 0:
         for token in token_list:
@@ -238,9 +283,10 @@ def main():
                 print('等待10s')
                 time.sleep(10)
     else:
-        print('没有设置token')
+        print('没有设置token，请在环境变量里添加至少一个token')
+        run_message = '没有设置token，请在环境变量里添加至少一个token'
     # 发送消息
-    sendMessage('森空岛签到',run_message,skyland_notify.strip())
+    sendMessage('森空岛签到', run_message, skyland_notify.strip())
 
 
 if __name__ == "__main__":
