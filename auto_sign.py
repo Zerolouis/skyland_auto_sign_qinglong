@@ -75,35 +75,34 @@ def sendMessage(title: str, content: str, type: str):
     """
     if (skyland_notify):
         type = type.strip()
-        match type:
-            case 'TG':
-                notify.telegram_bot(title, content)
-            case 'BARK':
-                notify.bark(title, content)
-            case 'DD':
-                notify.dingding_bot(title, content)
-            case 'FSKEY':
-                notify.feishu_bot(title, content)
-            case 'GOBOT':
-                notify.go_cqhttp(title, content)
-            case 'GOTIFY':
-                notify.gotify(title, content)
-            case 'IGOT':
-                notify.iGot(title, content)
-            case 'SERVERJ':
-                notify.serverJ(title, content)
-            case 'PUSHDEER':
-                notify.pushdeer(title, content)
-            case 'PUSHPLUS':
-                notify.pushplus_bot(title, content)
-            case 'QMSG':
-                notify.qmsg_bot(title, content)
-            case 'QYWXAPP':
-                notify.wecom_app(title, content)
-            case 'QYWXBOT':
-                notify.wecom_bot(title, content)
-            case _:
-                pass
+        if type == 'TG':
+            notify.telegram_bot(title, content)
+        elif type == 'BARK':
+            notify.bark(title, content)
+        elif type == 'DD':
+            notify.dingding_bot(title, content)
+        elif type == 'FSKEY':
+            notify.feishu_bot(title, content)
+        elif type == 'GOBOT':
+            notify.go_cqhttp(title, content)
+        elif type == 'GOTIFY':
+            notify.gotify(title, content)
+        elif type == 'IGOT':
+            notify.iGot(title, content)
+        elif type == 'SERVERJ':
+            notify.serverJ(title, content)
+        elif type == 'PUSHDEER':
+            notify.pushdeer(title, content)
+        elif type == 'PUSHPLUS':
+            notify.pushplus_bot(title, content)
+        elif type == 'QMSG':
+            notify.qmsg_bot(title, content)
+        elif type == 'QYWXAPP':
+            notify.wecom_app(title, content)
+        elif type == 'QYWXBOT':
+            notify.wecom_bot(title, content)
+        else:
+            pass
 
 
 def generate_signature(token: str, path, body_or_query):
