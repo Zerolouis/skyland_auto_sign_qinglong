@@ -251,7 +251,7 @@ def do_sign(cred):
         awards = resp['data']['awards']
         for j in awards:
             res = j['resource']
-            success_message: str = f'角色{i.get("nickName")}({i.get("channelName")})签到成功，获得了{res["name"]}x{res.get("count") or 1}\n'
+            success_message: str = f'角色{i.get("nickName")}({i.get("channelName")})签到成功，获得了{res["name"]}x{j.get("count") or 1}\n'
             run_message += f'[账号{account_num}] {success_message}\n'
             account_num += 1
             print(success_message)
