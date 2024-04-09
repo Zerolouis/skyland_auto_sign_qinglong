@@ -74,7 +74,7 @@ https://gitee.com/FancyCabbage/skyland-auto-sign
 
    仅测试了TG，其他推送方式若有问题请反馈
 
-2. 在青龙面板`脚本管理`中找到本项目的`notify.py`文件，并填入相对应的推送API
+2. 在青龙面板`配置管理`中填入相对应的推送API的环境变量即可
 
 
 ## 其他
